@@ -8,30 +8,59 @@ orbs:
 # Orchestrate or schedule a set of jobs
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
-jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+executors:
+  my-executor:
+    docker:
+      - image: cimg/base:stable
+    working_directory: /tmp
+
+  my-node-executor:
     docker:
       - image: circleci/node:13.8.0
-    # Add steps to the job
-    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+
+jobs:
+  say-hello:
+    executor: my-node-executor
     steps:
       - checkout
       - run:
           name: "Say hello"
           command: "echo Hello, World!"
   say-world:
-    docker:
-      - image: circleci/node:13.8.0
+    executor: my-node-executor
     steps:
       - checkout
       - run:
           name: "Say world"
           command: |
             echo $USER_NAME
+  save_hello_world_output:
+    executor: my-executor
+    steps:
+      - run:
+          name: "create workspace"
+          command: mkdir -p workspace
+      - run:
+          name: "Save hello word"
+          command: echo "Hello, world!" > workspace/echo-output
+      - persist_to_workspace:
+          root: workspace
+          paths: 
+            - echo-output
+  print_output_file:
+    executor: my-executor
+    steps:
+      - attach_workspace:
+          # Must be absolute path or relative path from working_directory
+          at: /tmp/workspace
+      - run: |
+          if [[ `cat /tmp/workspace/echo-output` == "Hello, world!" ]]; then
+            echo "It worked!";
+          else
+            echo "Nope!"; exit 1
+          fi
 
-# Invoke jobs via workflows
+# Invoke jobs via workflows:
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
   # Name the workflow "welcome"
@@ -42,3 +71,7 @@ workflows:
       - say-world:
           requires:
             - say-hello
+      - save_hello_world_output:
+      - print_output_file:
+          requires:
+            - save_hello_world_output
