@@ -48,7 +48,7 @@ jobs:
           command: mkdir -p workspace
       - run:
           name: "Save hello word"
-          command: echo "Hello, world!" > workspace/echo-output
+          command: echo "Hello, world123!" > workspace/echo-output
       - persist_to_workspace:
           root: workspace
           paths: 
@@ -63,8 +63,12 @@ jobs:
           if [[ `cat /tmp/workspace/echo-output` == "Hello, world!" ]]; then
             echo "It worked!";
           else
-            echo "Nope!"; exit 1
+            exit 1
           fi
+      - run:
+          name: Upload Failed Tests
+          command: echo "It Failed!";
+          when: on_fail
 
 # Invoke jobs via workflows:
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
