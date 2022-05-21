@@ -74,13 +74,17 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - add_ssh_keys:
+          # You can get this ID in the section where you registered the SSH Key
+          fingerprints: ["12:a3:9a:8b:9c:29:82:1f:28:d9:3a:9a:3c:21:71:a0"] 
       - run:
-          name: Create Cloudformation Stack From CICD
+          name: Install Ansible
           command: |
-            aws cloudformation deploy \
-              --template-file template.yml \
-              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-              --region us-east-1
+            apk add --update ansible
+      - run:
+          name: Run Playbook and Configure server
+          command: |
+            ansible-playbook -i inventory main.yml
 # Invoke jobs via workflows:
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
